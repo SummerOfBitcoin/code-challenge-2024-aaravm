@@ -16,7 +16,7 @@ def hex_to_little_endian(hex_number):
     return little_endian_hex
 
 
-with open("1.json") as f:
+with open("mempool/0ac528562a1626863c0cb912eb725530c54e786e6485380c16633e4b9bce1720.json") as f:
     data = json.load(f)
 
 raw_transaction = ""
@@ -83,4 +83,19 @@ raw_transaction = raw_transaction + hex_to_little_endian(locktime)
 sighash_all= "01000000"
 raw_transaction = raw_transaction + sighash_all
 
-print(raw_transaction)
+# print(raw_transaction)
+
+import hashlib
+import ecdsa
+from binascii import unhexlify
+
+
+signature=data["vin"][0]["scriptsig_asm"].split()[1]
+signature=signature[:-2]
+pubKey=data["vin"][0]["scriptsig_asm"].split()[3]
+
+data1 = unhexlify(raw_transaction)
+sha256_hash1 = hashlib.sha256(data1).hexdigest()
+
+data2 = unhexlify(sha256_hash1)
+sha256_hash = hashlib.sha256(data2).hexdigest()
