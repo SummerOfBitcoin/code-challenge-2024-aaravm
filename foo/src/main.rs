@@ -16,12 +16,7 @@ fn hex_to_little_endian(hex_number: &str) -> String {
     hex::encode(little_endian_bytes)
 }
 
-fn main() {
-    let mut f = File::open("../mempool/0ac528562a1626863c0cb912eb725530c54e786e6485380c16633e4b9bce1720.json").unwrap();
-    let mut data = String::new();
-    f.read_to_string(&mut data).unwrap();
-    let data: serde_json::Value = serde_json::from_str(&data).unwrap();
-
+fn create_transaction(data: serde_json::Value) -> String {
     let mut raw_transaction = String::new();
 
     let version = format!("{:08x}", data["version"].as_u64().unwrap());
@@ -69,11 +64,6 @@ fn main() {
     raw_transaction += sighash_all;
 
 
-    let signature = data["vin"][0]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap();
-    let signature = &signature[..signature.len() - 2];
-
-    let pub_key = data["vin"][0]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
-
     let data1 = Vec::from_hex(raw_transaction).unwrap();
     let sha256_hash1 = Sha256::digest(&data1).to_vec();
 
@@ -81,17 +71,26 @@ fn main() {
     let hash_hex1 = Sha256::digest(&data2).to_vec();
 
     let hex = hex::encode(hash_hex1);
+    hex
+}
+
+fn main() {
+    let mut f = File::open("../mempool/0ac528562a1626863c0cb912eb725530c54e786e6485380c16633e4b9bce1720.json").unwrap();
+    let mut data = String::new();
+    f.read_to_string(&mut data).unwrap();
+    let data: serde_json::Value = serde_json::from_str(&data).unwrap();
+
+    let hex= create_transaction(data.clone());
     let hash_hex: &str = hex.as_str();
 
-    // println!("sha256_hash: {}", (hash_hex));
-
     let secp = Secp256k1::new();
-
+    
     // Decode the signature, public key, and hash
-    // let signature = "30440220200b9a61529151f9f264a04e9aa17bb6e1d53fb345747c44885b1e185a82c17502200e41059f8ab4d3b3709dcb91b050c344b06c5086f05598d62bc06a8b746db429";
+    let signature = data["vin"][0]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap();
+    let signature = &signature[..signature.len() - 2];
     let signature_bytes = decode(signature).expect("Failed to decode signature hex");
 
-    // let pub_key = "025f0ba0cdc8aa97ec1fffd01fac34d3a7f700baf07658048263a2c925825e8d33";
+    let pub_key = data["vin"][0]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
     let pubkey_bytes = decode(pub_key).expect("Failed to decode pubkey hex");
     let pubkey = PublicKey::from_slice(&pubkey_bytes).expect("Invalid public key");
 
