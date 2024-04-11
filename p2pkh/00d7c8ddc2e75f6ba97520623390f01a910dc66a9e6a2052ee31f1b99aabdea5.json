@@ -25,7 +25,7 @@
         "scriptpubkey_asm": "OP_DUP OP_HASH160 OP_PUSHBYTES_20 50eddab2e7b2b4ad23f04bd8f401e7ca22d711ba OP_EQUALVERIFY OP_CHECKSIG",
         "scriptpubkey_type": "p2pkh",
         "scriptpubkey_address": "18Nuzke4KSAJK3mnFbZZ6Fayu6pN41RGzx",
-        "value": 13908
+        "value": 13908 
       },
       "scriptsig": "47304402206e8aed94e46abe5cda427f0aee2f38faaa7041083bd77941d407969aba397860022035ef725fc3f10fbaaf734f1b040b49176f357dadab2bfed3790bb6ba07acff7501210345f308155ac73fb42e128e568395976fdd0d8e801172c1b0e0a0a5abf5b37877",
       "scriptsig_asm": "OP_PUSHBYTES_71 304402206e8aed94e46abe5cda427f0aee2f38faaa7041083bd77941d407969aba397860022035ef725fc3f10fbaaf734f1b040b49176f357dadab2bfed3790bb6ba07acff7501 OP_PUSHBYTES_33 0345f308155ac73fb42e128e568395976fdd0d8e801172c1b0e0a0a5abf5b37877",
