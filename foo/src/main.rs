@@ -8,6 +8,8 @@ use std::{fs::File, os::linux::raw};
 use std::io::Read;
 use sha2::{Digest, Sha256};
 use std::str;
+use std::path::Path;
+use std::fs;
 
 fn hex_to_little_endian(hex_number: &str) -> String {
     let hex_bytes = hex::decode(hex_number).unwrap();
@@ -16,7 +18,7 @@ fn hex_to_little_endian(hex_number: &str) -> String {
     hex::encode(little_endian_bytes)
 }
 
-fn create_transaction_p2wpkh(data: serde_json::Value, parameter: usize) -> String {
+fn create_transaction_p2wpkh(data: serde_json::Value, parameter: usize, flag: &mut bool) -> String {
     let mut raw_transaction = String::new();
 
     let version = format!("{:08x}", data["version"].as_u64().unwrap());
@@ -79,9 +81,11 @@ fn create_transaction_p2wpkh(data: serde_json::Value, parameter: usize) -> Strin
         let value = format!("{:016x}", (output["value"].as_f64().unwrap()) as u64);
         hashOutputs += &hex_to_little_endian(&value);
 
-        hashOutputs += "1976a914";
-        hashOutputs += output["scriptpubkey_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
-        hashOutputs += "88ac";
+        let temp = output["scriptpubkey"].as_str().unwrap().len() / 2;
+
+        hashOutputs += &hex_to_little_endian(&format!("{:02x}", temp));
+        hashOutputs += output["scriptpubkey"].as_str().unwrap();
+
     }
 
     let data1 = Vec::from_hex(hashOutputs).unwrap();
@@ -108,7 +112,7 @@ fn create_transaction_p2wpkh(data: serde_json::Value, parameter: usize) -> Strin
 }
 
 
-fn create_transaction_p2pkh(data: serde_json::Value, parameter: usize) -> String {
+fn create_transaction_p2pkh(data: serde_json::Value, parameter: usize, flag: &mut bool) -> String {
     let mut raw_transaction = String::new();
 
     let version = format!("{:08x}", data["version"].as_u64().unwrap());
@@ -121,7 +125,7 @@ fn create_transaction_p2pkh(data: serde_json::Value, parameter: usize) -> String
 
     for input in data["vin"].as_array().unwrap() {
         if ind == parameter {
-            println!("index is {}",ind);
+            // println!("index is {}",ind);
             let prev_txid = input["txid"].as_str().unwrap();
             raw_transaction += &hex_to_little_endian(prev_txid);
 
@@ -189,82 +193,111 @@ fn create_transaction_p2pkh(data: serde_json::Value, parameter: usize) -> String
 }
 
 fn main() {
-    let mut f = File::open("../mempool/00a5be9434f4d97613391cdce760293fd142786a00952ed4edfd66dd19c5c23a.json").unwrap();
-    let mut data = String::new();
-    f.read_to_string(&mut data).unwrap();
-    let data: serde_json::Value = serde_json::from_str(&data).unwrap();
+    let folder_path = "../mempool";
+    let mut invalid=0;
+    let mut count = 0;
+    for entry in fs::read_dir(folder_path).unwrap() {
+        if let Ok(entry) = entry {
+            let file_path = entry.path();
+            // let file_name = entry.file_name().into_string().unwrap();
+            println!("{}", file_path.display());
+            let mut f = File::open(file_path).unwrap();
+            // let mut f = File::open("../mempool/8680a81d506c73841c10013cbc89bebf5d4cae96c3e1bbdb66540c3df58864ff.json").unwrap();
+            let mut data = String::new();
+            f.read_to_string(&mut data).unwrap();
+            let data: serde_json::Value = serde_json::from_str(&data).unwrap();
 
-    let input_count = data["vin"].as_array().unwrap().len();
-    // let hex= create_transaction_p2wpkh(data.clone(),0);
+            let input_count = data["vin"].as_array().unwrap().len();
+            // let hex= create_transaction_p2wpkh(data.clone(),0);
 
-    let mut flag = false;
+            let mut flag = false;
 
-    for i in 0..input_count {
-        // If scriptSigtype!="p2pkh", continue
-        let script_sigtype = data["vin"][i]["prevout"]["scriptpubkey_type"].as_str().unwrap();
-        // println!("scriptSigtype is: {}",scriptSigtype);
+            let type_of_transaction = data["vin"][0]["prevout"]["scriptpubkey_type"].as_str().unwrap().to_string();
 
+            for i in 0..input_count {
+                let script_sigtype = data["vin"][i]["prevout"]["scriptpubkey_type"].as_str().unwrap();
 
-        let hex = if script_sigtype == "p2pkh" {
-            create_transaction_p2pkh(data.clone(), i)
-        } else if script_sigtype == "v0_p2wpkh" {
-            create_transaction_p2wpkh(data.clone(), i)
-        } else {
-            flag = true;
-            break;
-        };
-        let hash_hex: &str = hex.as_str();
+                if script_sigtype != type_of_transaction {
+                    flag = true;
+                    break;
+                }
 
-        let secp = Secp256k1::new();
-        
-        // Decode the signature, public key, and hash
+                let hex = if script_sigtype == "p2pkh" {
+                    create_transaction_p2pkh(data.clone(), i, &mut flag)
+                } else if script_sigtype == "v0_p2wpkh" {
+                    create_transaction_p2wpkh(data.clone(), i, &mut flag)
+                } else {
+                    flag = true;
+                    break;
+                };
+                let hash_hex: &str = hex.as_str();
 
-        let signature: String = if script_sigtype == "p2pkh" {
-            data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap().to_string()
-        } else if script_sigtype == "v0_p2wpkh" {
-            data["vin"][i]["witness"][0].as_str().unwrap().to_string()
-        } else {
-            flag = true;
-            break;
-        };
+                let secp = Secp256k1::new();
+                
+                // Decode the signature, public key, and hash
 
-        // IF P2PKH SIGNATURE IS HERE
-        // let signature = data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap();
+                let signature: String = if script_sigtype == "p2pkh" {
+                    data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap().to_string()
+                } else if script_sigtype == "v0_p2wpkh" {
+                    data["vin"][i]["witness"][0].as_str().unwrap().to_string()
+                } else {
+                    flag = true;
+                    break;
+                };
 
-        // let signature = data["vin"][i]["witness"][0].as_str().unwrap();
-        let signature = &signature[..signature.len() - 2];
-        let signature_bytes = decode(signature).expect("Failed to decode signature hex");
+                // IF P2PKH SIGNATURE IS HERE
+                let signature = &signature[..signature.len() - 2];
+                let signature_bytes = decode(signature).expect("Failed to decode signature hex");
 
-        // IF P2PKH PUBKEY IS HERE
-        let pub_key: String = if script_sigtype == "p2pkh" {
-            data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap().to_string()
-        } else if script_sigtype == "v0_p2wpkh" {
-            data["vin"][i]["witness"][1].as_str().unwrap().to_string()
-        } else {
-            flag = true;
-            break;
-        };
+                // IF P2PKH PUBKEY IS HERE
+                let pub_key: String = if script_sigtype == "p2pkh" {
+                    data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap().to_string()
+                } else if script_sigtype == "v0_p2wpkh" {
+                    data["vin"][i]["witness"][1].as_str().unwrap().to_string()
+                } else {
+                    flag = true;
+                    break;
+                };
 
-        // let pub_key = data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
+                // let pub_key = data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
 
-        // let pub_key = data["vin"][i]["witness"][1].as_str().unwrap();
-        let pubkey_bytes = decode(pub_key).expect("Failed to decode pubkey hex");
-        let pubkey = PublicKey::from_slice(&pubkey_bytes).expect("Invalid public key");
+                // let pub_key = data["vin"][i]["witness"][1].as_str().unwrap();
+                let pubkey_bytes = decode(pub_key).expect("Failed to decode pubkey hex");
+                let pubkey = PublicKey::from_slice(&pubkey_bytes).expect("Invalid public key");
 
-        let hash_bytes = decode(hash_hex).expect("Failed to decode hash hex");
-        let message = Message::from_slice(&hash_bytes).expect("Invalid message");
+                let hash_bytes = decode(hash_hex).expect("Failed to decode hash hex");
+                let message = Message::from_slice(&hash_bytes).expect("Invalid message");
 
-        // Create a signature object
-        let signature = Signature::from_der(&signature_bytes).expect("Invalid signature");
+                // Create a signature object
+                let signature = Signature::from_der(&signature_bytes).expect("Invalid signature");
 
-        // Verify the signature
-        match secp.verify(&message, &signature, &pubkey) {
-            Ok(_) => println!("Signature is valid!"),
-            Err(Error::IncorrectSignature) => println!("Signature is invalid!"),
-            _ => println!("Failed to verify signature!"),
+                // Verify the signature
+                match secp.verify(&message, &signature, &pubkey) {
+                    Ok(_) => {
+                        println!("Signature is valid!");
+                        continue;
+                    },
+                    Err(Error::IncorrectSignature) =>
+                    { 
+                        println!("Signature is invalid!");
+                        flag = true;
+                        break;
+                    },
+                    _ => println!("Failed to verify signature!"),
+                }
+            }
+            
+            if flag == false {
+                // println!("Transaction is valid");
+                count = count + 1;
+            }
+            else {
+                // println!("Transaction is invalid");
+                invalid = invalid + 1;
+            }
+            
         }
-    }
-    
-
-    
+    }   
+    println!("Total number of valid transactions are: {}",count); 
+    println!("Total number of invalid transactions are: {}",invalid);
 }
