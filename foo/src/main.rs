@@ -10,6 +10,8 @@ use sha2::{Digest, Sha256};
 use std::str;
 use std::fs;
 
+use std::time::Instant;
+
 mod create_transaction;
 mod create_txid;
 
@@ -22,7 +24,9 @@ fn hex_to_little_endian(hex_number: &str) -> String {
 
 
 fn main() {
-    let folder_path = "../mempool";
+    let start = Instant::now();
+
+    let folder_path = "../mempool/";
     let mut invalid=0;
     let mut count = 0;
     for entry in fs::read_dir(folder_path).unwrap() {
@@ -158,4 +162,7 @@ fn main() {
     }   
     println!("Total number of valid transactions are: {}",count); 
     println!("Total number of invalid transactions are: {}",invalid);
+
+    let duration = start.elapsed();
+    println!("Time taken: {:?}", duration);
 }
