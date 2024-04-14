@@ -18,7 +18,12 @@ pub fn create_transaction_p2pkh_final(data: serde_json::Value) -> String {
     raw_transaction += &hex_to_little_endian(&version);
 
     let input_count = format!("{:02x}", data["vin"].as_array().unwrap().len());
-    raw_transaction += &hex_to_little_endian(&input_count);
+
+
+    let input_count: u8 =  data["vin"].as_array().unwrap().len() as u8;
+    let input_count_bytes = hex::encode(input_count.to_le_bytes());
+
+    raw_transaction += &hex_to_little_endian(&input_count_bytes);
 
     let mut ind: usize = 0;
 
@@ -47,7 +52,10 @@ pub fn create_transaction_p2pkh_final(data: serde_json::Value) -> String {
     }
 
     let output_count = format!("{:02x}", data["vout"].as_array().unwrap().len());
-    raw_transaction += &hex_to_little_endian(&output_count);
+    
+    let output_count: u8 =  data["vout"].as_array().unwrap().len() as u8;
+    let output_count_bytes = hex::encode(output_count.to_le_bytes());
+    raw_transaction += &hex_to_little_endian(&output_count_bytes);
 
     for output in data["vout"].as_array().unwrap() {
         let value = format!("{:016x}", (output["value"].as_f64().unwrap()) as u64);
