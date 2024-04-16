@@ -14,6 +14,22 @@ use std::time::Instant;
 
 mod create_transaction;
 mod create_txid;
+mod merkle_root;
+
+use std::fs::OpenOptions;
+use std::io::Write;
+
+fn append_string_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(file_path)?;
+
+    writeln!(file, "{}", content)?;
+
+    Ok(())
+}
 
 fn hex_to_little_endian(hex_number: &str) -> String {
     let hex_bytes = hex::decode(hex_number).unwrap();
@@ -128,8 +144,7 @@ fn main() {
                 } else if type_of_transaction == "v0_p2wpkh" {
                     create_txid::p2wpkh::create_transaction_p2wpkh_final(data.clone())
                 } else {
-                    flag = true;
-                    break;
+                    continue;
                 };
                 // let hex = create_transaction_p2pkh_final(data.clone());
                 let hash_hex: &str = hex.as_str();
@@ -147,7 +162,26 @@ fn main() {
                 }
                 println!("little of the block is: {}",little_endian);
 
+                let wxid = if type_of_transaction == "p2pkh" {
+                    create_txid::p2pkh::create_transaction_p2pkh_final(data.clone())
+                } else if type_of_transaction == "v0_p2wpkh" {
+                    create_txid::w_p2wpkh::create_transaction_p2wpkh_final(data.clone())
+                } else {
+                    continue;
+                };
+
+                let hash_hex: &str = wxid.as_str();
+                let data1 = Vec::from_hex(hash_hex).unwrap();
+                let data2 = Sha256::digest(&data1).to_vec();
+                let hash_hex1 = Sha256::digest(&data2).to_vec();
+                let hex = hex::encode(hash_hex1);
+                let little_endian = hex_to_little_endian(&hex);
                 // let mut f = File::create("../block/".to_string() + &hex + ".json").unwrap();
+                let file_path = "../block.txt";
+                let content_to_append = little_endian.as_str();
+                if let Err(err) = append_string_to_file(file_path, content_to_append) {
+                    eprintln!("Error appending to file: {}", err);
+                }
 
 
 
@@ -160,6 +194,7 @@ fn main() {
             
         }
     }   
+    
     println!("Total number of valid transactions are: {}",count); 
     println!("Total number of invalid transactions are: {}",invalid);
 

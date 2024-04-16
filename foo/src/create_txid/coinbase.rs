@@ -25,7 +25,7 @@ pub fn coinbase(data: serde_json::Value) -> String {
     raw_transaction += "0000000000000000000000000000000000000000000000000000000000000000  ";
     raw_transaction += "ffffffff";
     
-
+    
 
     let mut ind: usize = 0;
 
