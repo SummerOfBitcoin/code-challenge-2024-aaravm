@@ -1,8 +1,16 @@
 
 extern crate secp256k1;
 extern crate hex;
-use std::str;
+use std::{hash, str};
+use sha2::{Digest, Sha256};
 
+fn hash256(hex: &str) -> String {
+    let binary = hex::decode(hex).unwrap();
+    let hash1 = Sha256::digest(&binary);
+    let hash2 = Sha256::digest(&hash1);
+    let result = hex::encode(hash2);
+    result
+}
 
 fn hex_to_little_endian(hex_number: &str) -> String {
     let hex_bytes = hex::decode(hex_number).unwrap();
@@ -11,68 +19,49 @@ fn hex_to_little_endian(hex_number: &str) -> String {
     hex::encode(little_endian_bytes)
 }
 
-pub fn coinbase(data: serde_json::Value) -> String {
+pub fn coinbase(result_bytes: String) -> String {
     let mut raw_transaction = String::new();
 
-    let version = format!("{:08x}", data["version"].as_u64().unwrap());
-    raw_transaction += &hex_to_little_endian(&version);
+    raw_transaction += "04000000";
 
     raw_transaction += "00";
     raw_transaction += "01";
 
     raw_transaction += "01";
 
-    raw_transaction += "0000000000000000000000000000000000000000000000000000000000000000  ";
+    raw_transaction += "0000000000000000000000000000000000000000000000000000000000000000";
     raw_transaction += "ffffffff";
     
-    
+    let temp = 900010;
+    let temp = format!("{:06x}", temp);
+    let mut temp_string = String::new();
+    temp_string += "03";
+    temp_string += &hex_to_little_endian(&temp);
 
-    let mut ind: usize = 0;
+    temp_string += "184d696e656420627920416e74506f6f6c373946205b8160a4256c0000946e0100";
 
-    for input in data["vin"].as_array().unwrap() {
-        
-        // println!("index is {}",ind);
-        let prev_txid = input["txid"].as_str().unwrap();
-        raw_transaction += &hex_to_little_endian(prev_txid);
+    // println!("temp_string is {}",temp_string);
 
-        let prev_index = format!("{:08x}", input["vout"].as_u64().unwrap());
-        raw_transaction += &hex_to_little_endian(&prev_index);
+    let tem_temp = temp_string.len() / 2;
+    let tem_temp = format!("{:02x}", tem_temp);
+    raw_transaction += &hex_to_little_endian(&tem_temp);
+    raw_transaction += &temp_string;
 
-        let scriptsig_length = input["scriptsig"].as_str().unwrap().len() / 2;
-        let scriptsig_length_hex = format!("{:02x}", scriptsig_length);
-        raw_transaction += &hex_to_little_endian(&scriptsig_length_hex);
+    raw_transaction += "ffffffff";
+    raw_transaction += "02";
 
-        let scriptsig = input["scriptsig"].as_str().unwrap();
-        raw_transaction += scriptsig;
+    raw_transaction += "00000000000000001976a914edf10a7fac6b32e24daa5305c723f3de58db1bc888ac0000000000000000";
 
-        let sequence_decimal = data["vin"][ind]["sequence"].as_u64().unwrap_or_default();
-        let sequence_hex = format!("{:08x}", sequence_decimal);
+    let mut x = String::new();
+    x += result_bytes.as_str();
+    x += "0000000000000000000000000000000000000000000000000000000000000000";
 
-        raw_transaction += &hex_to_little_endian(&sequence_hex);
-        
-        ind = ind + 1;
-    }
+    raw_transaction += "26";
+    raw_transaction += "6a24aa21a9ed";
+    raw_transaction += &hash256(&x);
 
-    let output_count = format!("{:02x}", data["vout"].as_array().unwrap().len());
-    
-    let output_count: u8 =  data["vout"].as_array().unwrap().len() as u8;
-    let output_count_bytes = hex::encode(output_count.to_le_bytes());
-    raw_transaction += &hex_to_little_endian(&output_count_bytes);
+    raw_transaction += "0120000000000000000000000000000000000000000000000000000000000000000000000000";
 
-    for output in data["vout"].as_array().unwrap() {
-        let value = format!("{:016x}", (output["value"].as_f64().unwrap()) as u64);
-        raw_transaction += &hex_to_little_endian(&value);
-
-        let script_length = output["scriptpubkey"].as_str().unwrap().len() / 2;
-        let script_length_hex = format!("{:02x}", script_length);
-        raw_transaction += &hex_to_little_endian(&script_length_hex);
-
-        let script_pubkey = output["scriptpubkey"].as_str().unwrap();
-        raw_transaction += script_pubkey;
-    }
-
-    let locktime = format!("{:08x}", data["locktime"].as_u64().unwrap());
-    raw_transaction += &hex_to_little_endian(&locktime);
     raw_transaction
 }
 

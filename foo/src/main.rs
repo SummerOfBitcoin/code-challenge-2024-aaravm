@@ -19,6 +19,10 @@ mod merkle_root;
 use std::fs::OpenOptions;
 use std::io::Write;
 
+use crate::create_txid::coinbase;
+
+
+
 fn append_string_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     let mut file = OpenOptions::new()
         .write(true)
@@ -197,13 +201,33 @@ fn main() {
     // println!("Total number of valid transactions are: {}",count); 
     // println!("Total number of invalid transactions are: {}",invalid);
 
+    let file_path = "../block.txt";
+
+    let contents = fs::read_to_string(file_path)
+    .expect("Should have been able to read the file");
     
-    let txids = vec![
-    "8c14f0db3df150123e6f3dbbf30f8b955a8249b62ac1d1ff16284aefa3d06d87".to_string(),
-    "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4".to_string(),
-    "6359f0868171b1d194cbee1af2f16ea598ae8fad666d9b012c8ed2b79a236ec4".to_string(),
-    "e9a66845e05d5abc0ad04ec80f774a7e585c6e8db975962d069a522137b80c1d".to_string(),
-];
+    let txids: Vec<String> = contents.lines().map(String::from).collect();
+    // for line in &lines {
+    //     println!("{}", line);
+    // }
+
+    // println!("{}",lines[1]);
+
+    // println!("With text:\n{contents}");
+
+
+    // Display the txids
+    // for txid in &txids {
+    //     println!("{}", txid);
+    // }
+
+
+//     let txids = vec![
+//     "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+//     "6440ffe0a58cbec4692d075bc74877cdf7554a25eee5a02fa6ff3bb55dbb0802".to_string(),
+//     "9e4fa066c9587e65845065a6b5ad02cbec6cfdad8b0158953dcee086ff420ffd".to_string(),
+//     "57661a181f4762861fc2bc5c6001c27b54e26992e845b4742a6f0f867609b2c2".to_string(),
+// ];
 
     let mut txids: Vec<String> = txids
         .iter()
@@ -215,11 +239,11 @@ fn main() {
 
     // Convert the result back to natural byte order
     let result_bytes = result.chars().collect::<String>();
-    let result_bytes= hex_to_little_endian(&result_bytes);
+    // let result_bytes= hex_to_little_endian(&result_bytes);
     println!("{}", result_bytes); // Output: f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
 
+    println!("coinbase transaction is: {} ", coinbase::coinbase(result_bytes.clone()));
     
-
     let duration = start.elapsed();
     println!("Time taken: {:?}", duration);
 }
