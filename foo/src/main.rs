@@ -42,161 +42,183 @@ fn hex_to_little_endian(hex_number: &str) -> String {
 fn main() {
     let start = Instant::now();
 
-    let folder_path = "../mempool/";
-    let mut invalid=0;
-    let mut count = 0;
-    for entry in fs::read_dir(folder_path).unwrap() {
-        if let Ok(entry) = entry {
-            let file_path = entry.path();
-            // let file_name = entry.file_name().into_string().unwrap();
-            println!("{}", file_path.display());
-            let mut f = File::open(file_path).unwrap();
-            // let mut f = File::open("../mempool/8680a81d506c73841c10013cbc89bebf5d4cae96c3e1bbdb66540c3df58864ff.json").unwrap();
-            let mut data = String::new();
-            f.read_to_string(&mut data).unwrap();
-            let data: serde_json::Value = serde_json::from_str(&data).unwrap();
+    // let folder_path = "../mempool/";
+    // let mut invalid=0;
+    // let mut count = 0;
+    // for entry in fs::read_dir(folder_path).unwrap() {
+    //     if let Ok(entry) = entry {
+    //         let file_path = entry.path();
+    //         // let file_name = entry.file_name().into_string().unwrap();
+    //         println!("{}", file_path.display());
+    //         let mut f = File::open(file_path).unwrap();
+    //         // let mut f = File::open("../mempool/8680a81d506c73841c10013cbc89bebf5d4cae96c3e1bbdb66540c3df58864ff.json").unwrap();
+    //         let mut data = String::new();
+    //         f.read_to_string(&mut data).unwrap();
+    //         let data: serde_json::Value = serde_json::from_str(&data).unwrap();
 
-            let input_count = data["vin"].as_array().unwrap().len();
-            // let hex= create_transaction_p2wpkh(data.clone(),0);
+    //         let input_count = data["vin"].as_array().unwrap().len();
+    //         // let hex= create_transaction_p2wpkh(data.clone(),0);
 
-            let mut flag = false;
+    //         let mut flag = false;
 
-            let type_of_transaction = data["vin"][0]["prevout"]["scriptpubkey_type"].as_str().unwrap().to_string();
+    //         let type_of_transaction = data["vin"][0]["prevout"]["scriptpubkey_type"].as_str().unwrap().to_string();
 
-            for i in 0..input_count {
-                let script_sigtype = data["vin"][i]["prevout"]["scriptpubkey_type"].as_str().unwrap();
+    //         for i in 0..input_count {
+    //             let script_sigtype = data["vin"][i]["prevout"]["scriptpubkey_type"].as_str().unwrap();
 
-                if script_sigtype != type_of_transaction {
-                    flag = true;
-                    break;
-                }
+    //             if script_sigtype != type_of_transaction {
+    //                 flag = true;
+    //                 break;
+    //             }
 
-                let hex = if script_sigtype == "p2pkh" {
-                    create_transaction::p2pkh::create_transaction_p2pkh(data.clone(), i)
-                } else if script_sigtype == "v0_p2wpkh" {
-                    create_transaction::p2wpkh::create_transaction_p2wpkh(data.clone(), i)
-                } else {
-                    flag = true;
-                    break;
-                };
-                let hash_hex: &str = hex.as_str();
+    //             let hex = if script_sigtype == "p2pkh" {
+    //                 create_transaction::p2pkh::create_transaction_p2pkh(data.clone(), i)
+    //             } else if script_sigtype == "v0_p2wpkh" {
+    //                 create_transaction::p2wpkh::create_transaction_p2wpkh(data.clone(), i)
+    //             } else {
+    //                 flag = true;
+    //                 break;
+    //             };
+    //             let hash_hex: &str = hex.as_str();
 
-                let secp = Secp256k1::new();
+    //             let secp = Secp256k1::new();
                 
-                // Decode the signature, public key, and hash
+    //             // Decode the signature, public key, and hash
 
-                let signature: String = if script_sigtype == "p2pkh" {
-                    data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap().to_string()
-                } else if script_sigtype == "v0_p2wpkh" {
-                    data["vin"][i]["witness"][0].as_str().unwrap().to_string()
-                } else {
-                    flag = true;
-                    break;
-                };
+    //             let signature: String = if script_sigtype == "p2pkh" {
+    //                 data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(1).unwrap().to_string()
+    //             } else if script_sigtype == "v0_p2wpkh" {
+    //                 data["vin"][i]["witness"][0].as_str().unwrap().to_string()
+    //             } else {
+    //                 flag = true;
+    //                 break;
+    //             };
 
-                // IF P2PKH SIGNATURE IS HERE
-                let signature = &signature[..signature.len() - 2];
-                let signature_bytes = decode(signature).expect("Failed to decode signature hex");
+    //             // IF P2PKH SIGNATURE IS HERE
+    //             let signature = &signature[..signature.len() - 2];
+    //             let signature_bytes = decode(signature).expect("Failed to decode signature hex");
 
-                // IF P2PKH PUBKEY IS HERE
-                let pub_key: String = if script_sigtype == "p2pkh" {
-                    data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap().to_string()
-                } else if script_sigtype == "v0_p2wpkh" {
-                    data["vin"][i]["witness"][1].as_str().unwrap().to_string()
-                } else {
-                    flag = true;
-                    break;
-                };
+    //             // IF P2PKH PUBKEY IS HERE
+    //             let pub_key: String = if script_sigtype == "p2pkh" {
+    //                 data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap().to_string()
+    //             } else if script_sigtype == "v0_p2wpkh" {
+    //                 data["vin"][i]["witness"][1].as_str().unwrap().to_string()
+    //             } else {
+    //                 flag = true;
+    //                 break;
+    //             };
 
-                // let pub_key = data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
+    //             // let pub_key = data["vin"][i]["scriptsig_asm"].as_str().unwrap().split_whitespace().nth(3).unwrap();
 
-                // let pub_key = data["vin"][i]["witness"][1].as_str().unwrap();
-                let pubkey_bytes = decode(pub_key).expect("Failed to decode pubkey hex");
-                let pubkey = PublicKey::from_slice(&pubkey_bytes).expect("Invalid public key");
+    //             // let pub_key = data["vin"][i]["witness"][1].as_str().unwrap();
+    //             let pubkey_bytes = decode(pub_key).expect("Failed to decode pubkey hex");
+    //             let pubkey = PublicKey::from_slice(&pubkey_bytes).expect("Invalid public key");
 
-                let hash_bytes = decode(hash_hex).expect("Failed to decode hash hex");
-                let message = Message::from_slice(&hash_bytes).expect("Invalid message");
+    //             let hash_bytes = decode(hash_hex).expect("Failed to decode hash hex");
+    //             let message = Message::from_slice(&hash_bytes).expect("Invalid message");
 
-                // Create a signature object
-                let signature = Signature::from_der(&signature_bytes).expect("Invalid signature");
+    //             // Create a signature object
+    //             let signature = Signature::from_der(&signature_bytes).expect("Invalid signature");
 
-                // Verify the signature
-                match secp.verify(&message, &signature, &pubkey) {
-                    Ok(_) => {
-                        println!("Signature is valid!");
-                        continue;
-                    },
-                    Err(Error::IncorrectSignature) =>
-                    { 
-                        println!("Signature is invalid!");
-                        flag = true;
-                        break;
-                    },
-                    _ => println!("Failed to verify signature!"),
-                }
-            }
+    //             // Verify the signature
+    //             match secp.verify(&message, &signature, &pubkey) {
+    //                 Ok(_) => {
+    //                     println!("Signature is valid!");
+    //                     continue;
+    //                 },
+    //                 Err(Error::IncorrectSignature) =>
+    //                 { 
+    //                     println!("Signature is invalid!");
+    //                     flag = true;
+    //                     break;
+    //                 },
+    //                 _ => println!("Failed to verify signature!"),
+    //             }
+    //         }
             
-            if flag == false {
-                // println!("Transaction is valid");
-                let type_of_transaction = data["vin"][0]["prevout"]["scriptpubkey_type"].as_str().unwrap().to_string();
-                let hex = if type_of_transaction == "p2pkh" {
-                    create_txid::p2pkh::create_transaction_p2pkh_final(data.clone())
-                } else if type_of_transaction == "v0_p2wpkh" {
-                    create_txid::p2wpkh::create_transaction_p2wpkh_final(data.clone())
-                } else {
-                    continue;
-                };
-                // let hex = create_transaction_p2pkh_final(data.clone());
-                let hash_hex: &str = hex.as_str();
-                let data1 = Vec::from_hex(hash_hex).unwrap();
-                let data2 = Sha256::digest(&data1).to_vec();
-                let hash_hex1 = Sha256::digest(&data2).to_vec();
-                let hex = hex::encode(hash_hex1);
-                println!("Hash of the block is: {}",hex);
-                let little_endian = hex_to_little_endian(&hex);
-                if type_of_transaction == "p2pkh" {
-                    println!("Type of the block is: P2PKH");
-                }
-                else if type_of_transaction == "v0_p2wpkh"{
-                    println!("Type of the block is: P2WPKH");
-                }
-                println!("little of the block is: {}",little_endian);
+    //         if flag == false {
+    //             // println!("Transaction is valid");
+    //             let type_of_transaction = data["vin"][0]["prevout"]["scriptpubkey_type"].as_str().unwrap().to_string();
+    //             let hex = if type_of_transaction == "p2pkh" {
+    //                 create_txid::p2pkh::create_transaction_p2pkh_final(data.clone())
+    //             } else if type_of_transaction == "v0_p2wpkh" {
+    //                 create_txid::p2wpkh::create_transaction_p2wpkh_final(data.clone())
+    //             } else {
+    //                 continue;
+    //             };
+    //             // let hex = create_transaction_p2pkh_final(data.clone());
+    //             let hash_hex: &str = hex.as_str();
+    //             let data1 = Vec::from_hex(hash_hex).unwrap();
+    //             let data2 = Sha256::digest(&data1).to_vec();
+    //             let hash_hex1 = Sha256::digest(&data2).to_vec();
+    //             let hex = hex::encode(hash_hex1);
+    //             println!("Hash of the block is: {}",hex);
+    //             let little_endian = hex_to_little_endian(&hex);
+    //             if type_of_transaction == "p2pkh" {
+    //                 println!("Type of the block is: P2PKH");
+    //             }
+    //             else if type_of_transaction == "v0_p2wpkh"{
+    //                 println!("Type of the block is: P2WPKH");
+    //             }
+    //             println!("little of the block is: {}",little_endian);
 
-                let wxid = if type_of_transaction == "p2pkh" {
-                    create_txid::p2pkh::create_transaction_p2pkh_final(data.clone())
-                } else if type_of_transaction == "v0_p2wpkh" {
-                    create_txid::w_p2wpkh::create_transaction_p2wpkh_final(data.clone())
-                } else {
-                    continue;
-                };
+    //             let wxid = if type_of_transaction == "p2pkh" {
+    //                 create_txid::p2pkh::create_transaction_p2pkh_final(data.clone())
+    //             } else if type_of_transaction == "v0_p2wpkh" {
+    //                 create_txid::w_p2wpkh::create_transaction_p2wpkh_final(data.clone())
+    //             } else {
+    //                 continue;
+    //             };
 
-                let hash_hex: &str = wxid.as_str();
-                let data1 = Vec::from_hex(hash_hex).unwrap();
-                let data2 = Sha256::digest(&data1).to_vec();
-                let hash_hex1 = Sha256::digest(&data2).to_vec();
-                let hex = hex::encode(hash_hex1);
-                let little_endian = hex_to_little_endian(&hex);
-                // let mut f = File::create("../block/".to_string() + &hex + ".json").unwrap();
-                let file_path = "../block.txt";
-                let content_to_append = little_endian.as_str();
-                if let Err(err) = append_string_to_file(file_path, content_to_append) {
-                    eprintln!("Error appending to file: {}", err);
-                }
+    //             let hash_hex: &str = wxid.as_str();
+    //             let data1 = Vec::from_hex(hash_hex).unwrap();
+    //             let data2 = Sha256::digest(&data1).to_vec();
+    //             let hash_hex1 = Sha256::digest(&data2).to_vec();
+    //             let hex = hex::encode(hash_hex1);
+    //             let little_endian = hex_to_little_endian(&hex);
+    //             // let mut f = File::create("../block/".to_string() + &hex + ".json").unwrap();
+    //             let file_path = "../block.txt";
+    //             let content_to_append = little_endian.as_str();
+    //             if let Err(err) = append_string_to_file(file_path, content_to_append) {
+    //                 eprintln!("Error appending to file: {}", err);
+    //             }
 
 
 
-                count = count + 1;
-            }
-            else {
-                // println!("Transaction is invalid");
-                invalid = invalid + 1;
-            }
+    //             count = count + 1;
+    //         }
+    //         else {
+    //             // println!("Transaction is invalid");
+    //             invalid = invalid + 1;
+    //         }
             
-        }
-    }   
+    //     }
+    // }   
+    // println!("Total number of valid transactions are: {}",count); 
+    // println!("Total number of invalid transactions are: {}",invalid);
+
     
-    println!("Total number of valid transactions are: {}",count); 
-    println!("Total number of invalid transactions are: {}",invalid);
+    let txids = vec![
+    "8c14f0db3df150123e6f3dbbf30f8b955a8249b62ac1d1ff16284aefa3d06d87".to_string(),
+    "fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4".to_string(),
+    "6359f0868171b1d194cbee1af2f16ea598ae8fad666d9b012c8ed2b79a236ec4".to_string(),
+    "e9a66845e05d5abc0ad04ec80f774a7e585c6e8db975962d069a522137b80c1d".to_string(),
+];
+
+    let mut txids: Vec<String> = txids
+        .iter()
+        .map(|x| x.chars().collect::<Vec<char>>().chunks(2).map(|c| c.iter().collect::<String>()).collect::<Vec<String>>().iter().rev().map(|s| s.to_string()).collect::<String>())
+        .collect();
+
+    let result = merkle_root::merkleroot(&mut txids);
+
+
+    // Convert the result back to natural byte order
+    let result_bytes = result.chars().collect::<String>();
+    let result_bytes= hex_to_little_endian(&result_bytes);
+    println!("{}", result_bytes); // Output: f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
+
+    
 
     let duration = start.elapsed();
     println!("Time taken: {:?}", duration);
