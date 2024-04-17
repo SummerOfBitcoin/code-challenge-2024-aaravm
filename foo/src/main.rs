@@ -20,6 +20,7 @@ use std::fs::OpenOptions;
 use std::io::Write;
 
 use crate::create_txid::coinbase;
+use crate::create_txid::header;
 
 
 
@@ -169,7 +170,7 @@ fn main() {
     //             let wxid = if type_of_transaction == "p2pkh" {
     //                 create_txid::p2pkh::create_transaction_p2pkh_final(data.clone())
     //             } else if type_of_transaction == "v0_p2wpkh" {
-    //                 create_txid::w_p2wpkh::create_transaction_p2wpkh_final(data.clone())
+    //                 create_txid::p2wpkh::create_transaction_p2wpkh_final(data.clone())
     //             } else {
     //                 continue;
     //             };
@@ -181,7 +182,7 @@ fn main() {
     //             let hex = hex::encode(hash_hex1);
     //             let little_endian = hex_to_little_endian(&hex);
     //             // let mut f = File::create("../block/".to_string() + &hex + ".json").unwrap();
-    //             let file_path = "../block.txt";
+    //             let file_path = "../code.txt";
     //             let content_to_append = little_endian.as_str();
     //             if let Err(err) = append_string_to_file(file_path, content_to_append) {
     //                 eprintln!("Error appending to file: {}", err);
@@ -207,27 +208,6 @@ fn main() {
     .expect("Should have been able to read the file");
     
     let txids: Vec<String> = contents.lines().map(String::from).collect();
-    // for line in &lines {
-    //     println!("{}", line);
-    // }
-
-    // println!("{}",lines[1]);
-
-    // println!("With text:\n{contents}");
-
-
-    // Display the txids
-    // for txid in &txids {
-    //     println!("{}", txid);
-    // }
-
-
-//     let txids = vec![
-//     "0000000000000000000000000000000000000000000000000000000000000000".to_string(),
-//     "6440ffe0a58cbec4692d075bc74877cdf7554a25eee5a02fa6ff3bb55dbb0802".to_string(),
-//     "9e4fa066c9587e65845065a6b5ad02cbec6cfdad8b0158953dcee086ff420ffd".to_string(),
-//     "57661a181f4762861fc2bc5c6001c27b54e26992e845b4742a6f0f867609b2c2".to_string(),
-// ];
 
     let mut txids: Vec<String> = txids
         .iter()
@@ -240,10 +220,30 @@ fn main() {
     // Convert the result back to natural byte order
     let result_bytes = result.chars().collect::<String>();
     // let result_bytes= hex_to_little_endian(&result_bytes);
-    println!("{}", result_bytes); // Output: f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
+    // println!("{}", result_bytes); // Output: f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
 
     println!("coinbase transaction is: {} ", coinbase::coinbase(result_bytes.clone()));
+    let file_path = "../code.txt";
+
+    let contents = fs::read_to_string(file_path)
+    .expect("Should have been able to read the file");
     
+    let txids: Vec<String> = contents.lines().map(String::from).collect();
+
+    let mut txids: Vec<String> = txids
+        .iter()
+        .map(|x| x.chars().collect::<Vec<char>>().chunks(2).map(|c| c.iter().collect::<String>()).collect::<Vec<String>>().iter().rev().map(|s| s.to_string()).collect::<String>())
+        .collect();
+
+    let result = merkle_root::merkleroot(&mut txids);
+
+
+    // Convert the result back to natural byte order
+    let result_bytes = result.chars().collect::<String>();
+    println!("{}", result_bytes);
+    let header = create_txid::header::header(result_bytes.clone());
+    println!("header is :{}", header);
+
     let duration = start.elapsed();
     println!("Time taken: {:?}", duration);
 }
