@@ -80,13 +80,14 @@ pub fn header(result_bytes: String) -> String {
 
         // println!("{}",hex::encode(&attempt));
         let result = hash256(&attempt);
+        let result_reversed = reverse_bytes(&result);
 
         // Show result
         // println!("{:?}: {:?}", nonce, hex::encode(&result));
         
 
         // End if we get a block hash below the target
-        if u256_from_bytes_be(&result) < u256_from_bytes_be(&target) {
+        if u256_from_bytes_be(&result_reversed) < u256_from_bytes_be(&target) {
             println!("{}",nonce);
             println!("{}",hex::encode(&attempt));
 
