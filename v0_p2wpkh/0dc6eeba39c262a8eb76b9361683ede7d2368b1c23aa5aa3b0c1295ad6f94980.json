@@ -10,9 +10,9 @@
         "scriptpubkey_asm": "OP_0 OP_PUSHBYTES_20 49c6b8095b5fe10e9493984043f16acdda4f6554",
         "scriptpubkey_type": "v0_p2wpkh",
         "scriptpubkey_address": "bc1qf8rtsz2mtlssa9ynnpqy8ut2ehdy7e25threvz",
-        "value": 47103
+        "value": 47103  
       },
-      "scriptsig": "",
+      "scriptsig": "", 
       "scriptsig_asm": "",
       "witness": [
         "30450221009d9de26d5a9ae1701c459c27dceab030bb4e542bb81e7ce9265674e5e1b1e5c20220450ce3c2c501804079e7ce8178ed2d80b2553cc26b5f59638824afbd8db4a3ca01",
@@ -30,5 +30,5 @@
       "scriptpubkey_address": "bc1qxdg44arqwzq7aa0lmm3nnyxzw3j6m233djg4ec",
       "value": 45896
     }
-  ]
+  ] 
 }

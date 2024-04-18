@@ -1,7 +1,7 @@
 file_path = "output.txt"
-file_path1="code.txt"
+file_path1="final.txt"
 
-
+        
 with open(file_path1, "r") as file: 
     for line in file:
         with open(file_path, "a") as file:
