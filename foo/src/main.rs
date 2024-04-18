@@ -240,7 +240,7 @@ fn main() {
 
     // Convert the result back to natural byte order
     let result_bytes = result.chars().collect::<String>();
-    println!("{}", result_bytes);
+    println!("the merkle root is: {}", result_bytes);
     let header = create_txid::header::header(result_bytes.clone());
     println!("header is :{}", header);
 
