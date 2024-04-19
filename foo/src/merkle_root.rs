@@ -27,3 +27,4 @@ pub fn merkleroot(txids: &mut Vec<String>) -> String {
 
     merkleroot(&mut result)
 }
+    
