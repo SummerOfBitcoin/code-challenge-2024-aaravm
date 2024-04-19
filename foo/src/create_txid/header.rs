@@ -60,7 +60,7 @@ pub fn header(result_bytes: String) -> String {
     let merkleroot = result_bytes.as_bytes().to_vec();
     let merkleroot = hex::decode("e99ee05ff23d77b26d8c3e46128e22b25a30bb2a063a82c3abaa3698b9a39444").unwrap();
 
-    let time: u32 = 1713454776;
+    let time: u32 = 1713510295;
     let bits = hex::decode("1f00ffff").unwrap();
     let mut nonce: u32 = 0;
 ;
