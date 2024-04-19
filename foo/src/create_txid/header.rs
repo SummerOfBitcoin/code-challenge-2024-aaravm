@@ -47,7 +47,7 @@ pub fn header(result_bytes: String) -> String {
     raw_transaction += "0000000000000000000000000000000000000000000000000000000000000000";
     raw_transaction += result_bytes.as_str();
 
-    let temp= 1713517656;
+    let temp= 1713518111;
     let temp = format!("{:08x}", temp);
     println!("temp is {}",temp);
     raw_transaction += &hex_to_little_endian(&temp);
@@ -60,7 +60,7 @@ pub fn header(result_bytes: String) -> String {
     let merkleroot = result_bytes.as_bytes().to_vec();
     let merkleroot = hex::decode("717a4a7403a6169bcd3f5e7a438a588a24aa1c4a6676ec568cebaf682dcf9dd6").unwrap();
 
-    let time: u32 = 1713510295;
+    let time: u32 = 1713518111;
     let bits = hex::decode("1f00ffff").unwrap();
     let mut nonce: u32 = 0;
 ;
