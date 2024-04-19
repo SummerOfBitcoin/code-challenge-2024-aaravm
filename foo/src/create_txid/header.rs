@@ -58,7 +58,7 @@ pub fn header(result_bytes: String) -> String {
     let version: u32 = 4;
     let prevblock = hex::decode("0000000000000000000000000000000000000000000000000000000000000000").unwrap();
     let merkleroot = result_bytes.as_bytes().to_vec();
-    let merkleroot = hex::decode("717a4a7403a6169bcd3f5e7a438a588a24aa1c4a6676ec568cebaf682dcf9dd6").unwrap();
+    let merkleroot = hex::decode("65251d1707ba842de115b1412ba556da354678dea55b7fe8ebb912cd84961277").unwrap();
 
     let time: u32 = 1713528978;
     let bits = hex::decode("1f00ffff").unwrap();
