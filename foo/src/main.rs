@@ -205,7 +205,7 @@ fn main() {
 
     let file_path = "../block.txt";
 
-    let file_path = "../code_p2pkh.txt";
+    // let file_path = "../code_p2pkh.txt";
 
     let contents = fs::read_to_string(file_path)
     .expect("Should have been able to read the file");
@@ -223,11 +223,11 @@ fn main() {
     // Convert the result back to natural byte order
     let result_bytes = result.chars().collect::<String>();
     let result_bytes= hex_to_little_endian(&result_bytes);
-    println!("tmp: {}", result_bytes); // Output: f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
+    println!("merkle root of wxid, used in coinbase: {}", result_bytes); // Output: f3e94742aca4b5ef85488dc37c06c3282295ffec960994b2c0d5ac2a25a95766
 
     println!("coinbase transaction is: {} ", coinbase::coinbase(result_bytes.clone()));
     let file_path = "../code.txt";
-    let file_path = "../code_p2pkh.txt";
+    // let file_path = "../code_p2pkh.txt";
 
     let contents = fs::read_to_string(file_path)
     .expect("Should have been able to read the file");

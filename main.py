@@ -1,5 +1,5 @@
 file_path = "output.txt"
-file_path1= "final_p2pkh.txt"
+file_path1= "final.txt"
 
         
 with open(file_path1, "r") as file: 
