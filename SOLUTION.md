@@ -36,7 +36,7 @@ Here is what the main.rs file does:
 
 Firstly, for all files in the mempool, I put a loop through them, and in each loop, firstly I check the type of inputs. If all inputs are p2pkh or p2wpkh, I create a raw transaction according to its type:
 
-````
+```
     for i in 0..input_count {
         let script_sigtype = data["vin"][i]["prevout"]["scriptpubkey_type"].as_str().unwrap(); 
         let hex = if script_sigtype == "p2pkh" {
@@ -47,10 +47,12 @@ Firstly, for all files in the mempool, I put a loop through them, and in each lo
                 flag = true;
                 break;
         };
-````
+```
 <br>
       Then, I, using the public key and signature from the transaction, pass them through Secp256k1 library.
-````
+<br>
+
+```
    let secp = Secp256k1::new();
    match secp.verify(&message, &signature, &pubkey) {
                   Ok(_) => {
@@ -65,8 +67,65 @@ Firstly, for all files in the mempool, I put a loop through them, and in each lo
                   },
                   _ => println!("Failed to verify signature!"),
               }
-   ````
+   ```
+ 
+   Then, if the transaction comes out to be valid, I make the txids and wtxids, and store them in a text file. 
+   After looping through all the transactions, I make a merkle root from the wtxids to create the coinbase transaction
+     <br>
+```
+ let contents = fs::read_to_string(file_path)
+    .expect("Should have been able to read the file");
+    
+    let txids: Vec<String> = contents.lines().map(String::from).collect();
 
+    let mut txids: Vec<String> = txids
+        .iter()
+        .map(|x| x.chars().collect::<Vec<char>>().chunks(2).map(|c| c.iter().collect::<String>()).collect::<Vec<String>>().iter().rev().map(|s| s.to_string()).collect::<String>())
+        .collect();
 
-<h1>Results and Performance:</h1> Present the results of your solution, and analyze the efficiency of your solution.
-<h1>Conclusion: </h1>Discuss any insights gained from solving the problem, and outline potential areas for future improvement or research. Include a list of references or resources consulted during the problem-solving process.
+    let result = merkle_root::merkleroot(&mut txids);
+  ```
+
+Through the generated result, I then create the coinbase transaction, and add it to the block.
+Then I create the merkle root of the txids, and use that to generate the header.
+For that, I add the necessary parameters, and for the nonce, I start from 1, and keep incrementing the nonce by 1 till I get below the target difficulty.
+```
+loop {
+        // Hash the block header
+        let mut attempt = header.clone();
+        attempt.extend_from_slice(&field(nonce, 4));
+
+        let result = hash256(&attempt);
+        let result_reversed = reverse_bytes(&result);
+        
+        // End if we get a block hash below the target
+        if u256_from_bytes_be(&result_reversed) < u256_from_bytes_be(&target) {
+            println!("{}",nonce);
+            println!("{}",hex::encode(&attempt));
+
+            break;
+        }
+
+        // Increment the nonce and try again
+        nonce += 1;
+    }
+  ```
+
+<h1>Results and Performance:</h1> I am getting a good score of around 95/100, which indicates that I am able to use the block space efficiently. I think the code can be improved by adding support for other types of transactions since I only implement p2pkh and p2wpkh. I can also add support for when there are different kinds of transactions in the input.
+<h1>Conclusion: </h1> I found this task very interesting, and I feel there are a lot of future potential in improving the mining procedure of the bitcoin. for example:
+<ol>
+  <li> I feel that we can automate some part of the block, such that there is no need to include them in the block, and the system automatically does it for you, like adding the UNIX time in the block header</li>
+  <li>I honestly don't know why it is required that there are 2 txids, one with the raw transaction, and one generated later while making the final block</li>
+  <li>I think finding the nonce is a waste of computation power, and there has to be a better way of using this power, like a committee can be formed like the bitcoin maintainers to discuss potential ways we can use the computation power for the good humanity, and the compute power being used towards that problem instead.. </li>
+</ol>
+<br>
+<b>References:</b>
+<ul>
+  <li>
+    BIP 143: https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki
+  </li>
+  <li>
+    Learn me a bitcoin https://learnmeabitcoin.com/technical/block/
+  </li>
+  
+</ul>
