@@ -64,6 +64,6 @@ pub fn coinbase(result_bytes: String) -> String {
     println!("coinbase: {}", raw_transaction);
     let hash = hash256(&raw_transaction);
     hash
-}
+}   
 
 
