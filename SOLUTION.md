@@ -112,6 +112,12 @@ loop {
   ```
 
 <h1>Results and Performance:</h1> I am getting a good score of around 95/100, which indicates that I am able to use the block space efficiently. I think the code can be improved by adding support for other types of transactions since I only implement p2pkh and p2wpkh. I can also add support for when there are different kinds of transactions in the input.
+<br>
+Result score is at: https://github.com/SummerOfBitcoin/code-challenge-2024-aaravm/assets/32593731/930ba19f-81d1-47dc-8ae2-0bf7debfba30
+
+
+
+
 <h1>Conclusion: </h1> I found this task very interesting, and I feel there are a lot of future potential in improving the mining procedure of the bitcoin. for example:
 <ol>
   <li> I feel that we can automate some part of the block, such that there is no need to include them in the block, and the system automatically does it for you, like adding the UNIX time in the block header</li>
